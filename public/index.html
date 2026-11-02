@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LearnTrack - Student Learning & Quiz Management System</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">LT</div>
+        <div class="brand-text">
+          <h1>LearnTrack</h1>
+          <span>Student Learning & Quiz System</span>
+        </div>
+      </a>
+      <div class="nav-actions">
+        <div class="role-badge">
+          <span class="role-dot"></span>
+          <span>Day 1: Public Catalog</span>
+        </div>
+        <button class="btn btn-outline" id="role-toggle-btn" type="button">Switch View: Student</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section with Modern SaaS Ambient Card -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-card">
+        <span class="hero-tag">Week 02 Full-Stack</span>
+        <h2>Master Technical Concepts with <span class="hero-gradient-text">Structured Lessons & Quizzes</span></h2>
+        <p>Browse instructor-curated short courses, read concise lessons, and practice with automated scoring quizzes.</p>
+        
+        <div class="stats-row">
+          <div class="stat-item">
+            <span class="stat-num" id="total-courses">2</span>
+            <span class="stat-label">Active Courses</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num">2</span>
+            <span class="stat-label">System Roles</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num">SQLite</span>
+            <span class="stat-label">Persistent DB</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Course Catalog -->
+  <main class="container">
+    <div class="section-header">
+      <div>
+        <h3>Available Courses</h3>
+        <p>Explore structured courses loaded dynamically from the SQLite database.</p>
+      </div>
+    </div>
+
+    <div class="course-grid" id="course-list">
+      <p style="color: var(--text-muted);">Loading courses from database...</p>
+    </div>
+  </main>
+
+  <!-- Course Details Modal -->
+  <div class="detail-overlay" id="detail-modal" role="dialog" aria-modal="true">
+    <div class="detail-modal">
+      <button class="modal-close" id="modal-close-btn" type="button">&times;</button>
+      <span class="category-badge" id="modal-category">Category</span>
+      <h3 style="margin: 12px 0 8px; font-size: 22px;" id="modal-title">Course Title</h3>
+      <p style="color: var(--text-muted); font-size: 14px;" id="modal-desc">Description</p>
+      
+      <h4 style="margin-top: 20px; font-size: 15px; color: var(--secondary);">Lesson Overview (Database Content)</h4>
+      <div class="lesson-box" id="modal-lesson">Lesson text will appear here.</div>
+
+      <div class="info-callout">
+        💡 <strong>Day 1 Milestone:</strong> Course data successfully verified from SQLite database schema. Authentication and quiz submission flows activate on Days 2 & 3.
+      </div>
+      
+      <div style="margin-top: 22px; display: flex; justify-content: flex-end;">
+        <button class="btn btn-outline" id="modal-bottom-close" type="button">Close Preview</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>LearnTrack • Stack & Scale Remote Internship 2026 • Week 02 Milestone 1</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
