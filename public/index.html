@@ -8,7 +8,7 @@
 </head>
 <body>
 
-  <!-- Navigation -->
+  <!-- Navigation Bar -->
   <header class="navbar">
     <div class="container nav-container">
       <a href="/" class="brand">
@@ -18,23 +18,39 @@
           <span>Student Learning & Quiz System</span>
         </div>
       </a>
-      <div class="nav-actions">
-        <div class="role-badge">
-          <span class="role-dot"></span>
-          <span>Day 1: Public Catalog</span>
+      
+      <!-- User Auth State in Navbar -->
+      <div class="nav-actions" id="nav-actions">
+        <!-- Logged Out State -->
+        <div id="auth-logged-out" class="auth-group">
+          <button class="btn btn-primary" id="open-auth-btn" type="button">Sign In / Register</button>
         </div>
-        <button class="btn btn-outline" id="role-toggle-btn" type="button">Switch View: Student</button>
+
+        <!-- Logged In State (Hidden by default) -->
+        <div id="auth-logged-in" class="auth-group" style="display: none;">
+          <div class="user-badge" id="user-badge">
+            <span class="user-role-dot"></span>
+            <span id="nav-user-name">Prof. Farooq</span>
+            <span class="role-pill" id="nav-user-role">Instructor</span>
+          </div>
+          <button class="btn btn-outline btn-sm" id="logout-btn" type="button">Sign Out</button>
+        </div>
       </div>
     </div>
   </header>
 
-  <!-- Hero Section with Modern SaaS Ambient Card -->
+  <!-- Global Alert / Feedback Banner -->
+  <div class="container" style="margin-top: 16px;">
+    <div id="feedback-alert" class="alert" role="alert" style="display: none;"></div>
+  </div>
+
+  <!-- Hero Section -->
   <section class="hero">
     <div class="container">
       <div class="hero-card">
-        <span class="hero-tag">Week 02 Full-Stack</span>
-        <h2>Master Technical Concepts with <span class="hero-gradient-text">Structured Lessons & Quizzes</span></h2>
-        <p>Browse instructor-curated short courses, read concise lessons, and practice with automated scoring quizzes.</p>
+        <span class="hero-tag">Week 02 Full-Stack • Day 2</span>
+        <h2>Role-Based Learning Platform with <span class="hero-gradient-text">Protected Actions</span></h2>
+        <p>Instructors author structured courses & quizzes; students enroll, study lesson notes, and attempt scored tests.</p>
         
         <div class="stats-row">
           <div class="stat-item">
@@ -42,47 +58,158 @@
             <span class="stat-label">Active Courses</span>
           </div>
           <div class="stat-item">
-            <span class="stat-num">2</span>
-            <span class="stat-label">System Roles</span>
+            <span class="stat-num" id="current-role-stat">Guest</span>
+            <span class="stat-label">Current Session</span>
           </div>
           <div class="stat-item">
-            <span class="stat-num">SQLite</span>
-            <span class="stat-label">Persistent DB</span>
+            <span class="stat-num">Bcrypt</span>
+            <span class="stat-label">Encrypted Auth</span>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Course Catalog -->
+  <!-- Main Content Layout -->
   <main class="container">
-    <div class="section-header">
-      <div>
-        <h3>Available Courses</h3>
-        <p>Explore structured courses loaded dynamically from the SQLite database.</p>
-      </div>
-    </div>
 
-    <div class="course-grid" id="course-list">
-      <p style="color: var(--text-muted);">Loading courses from database...</p>
-    </div>
+    <!-- 1. Instructor Course Creation Card (Shown for Instructors) -->
+    <section class="card instructor-panel" id="instructor-panel" style="display: none;">
+      <div class="panel-header">
+        <div>
+          <h3>Instructor Studio: Create New Course</h3>
+          <p>Publish a technical course with structured lesson text (Instructors Only).</p>
+        </div>
+        <span class="category-badge">Instructor Exclusive</span>
+      </div>
+
+      <form id="create-course-form">
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label for="course-title">Course Title <span class="required">*</span></label>
+            <input type="text" id="course-title" placeholder="e.g., Modern API Security & JWT Authentication" required />
+          </div>
+          <div class="form-group flex-1">
+            <label for="course-category">Category</label>
+            <input type="text" id="course-category" placeholder="e.g., Cybersecurity" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="course-desc">Course Description <span class="required">*</span></label>
+          <textarea id="course-desc" rows="2" placeholder="Brief summary of what students will achieve..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="course-lessons">Lesson Content / Notes <span class="required">*</span></label>
+          <textarea id="course-lessons" rows="4" placeholder="Write lesson reading material here..." required></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="publish-btn">Publish Course to Catalog</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 2. Student Security Banner (Shown for Students) -->
+    <section class="card student-panel" id="student-panel" style="display: none;">
+      <div class="student-info-box">
+        <div>
+          <h4>Student Account Active</h4>
+          <p>You have student access: you can browse all courses, read lessons, and attempt quizzes.</p>
+        </div>
+        <!-- Button to demonstrate 403 Forbidden Security Evidence -->
+        <button class="btn btn-danger-outline" id="test-unauthorized-btn" type="button">
+          Test Instructor Action (Demonstrate 403 Block)
+        </button>
+      </div>
+    </section>
+
+    <!-- 3. Course Catalog Grid -->
+    <section class="section-layout">
+      <div class="section-header">
+        <div>
+          <h3>Course Catalog</h3>
+          <p>Browse verified courses from the SQLite database.</p>
+        </div>
+      </div>
+
+      <div class="course-grid" id="course-list">
+        <p style="color: var(--text-muted);">Loading courses from database...</p>
+      </div>
+    </section>
+
   </main>
 
-  <!-- Course Details Modal -->
-  <div class="detail-overlay" id="detail-modal" role="dialog" aria-modal="true">
-    <div class="detail-modal">
-      <button class="modal-close" id="modal-close-btn" type="button">&times;</button>
+  <!-- Sign In / Registration Modal -->
+  <div class="modal-overlay" id="auth-modal" role="dialog" aria-modal="true" style="display: none;">
+    <div class="modal-card auth-modal-box">
+      <button class="modal-close-btn" id="close-auth-btn" type="button">&times;</button>
+      
+      <div class="auth-tabs">
+        <button class="tab-btn active" id="tab-login" type="button">Sign In</button>
+        <button class="tab-btn" id="tab-register" type="button">Create Account</button>
+      </div>
+
+      <!-- Sign In Form -->
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-email">Email Address</label>
+          <input type="email" id="login-email" placeholder="name@example.com" required />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+
+        <!-- Quick 1-Click Demo Buttons -->
+        <div class="quick-demo-box">
+          <span>Quick Testing Shortcuts:</span>
+          <div class="quick-btns">
+            <button type="button" class="btn-chip" id="demo-instructor-btn">⚡ Sign in as Instructor</button>
+            <button type="button" class="btn-chip" id="demo-student-btn">⚡ Sign in as Student</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Register Form (Hidden by default) -->
+      <form id="register-form" style="display: none;">
+        <div class="form-group">
+          <label for="reg-name">Full Name</label>
+          <input type="text" id="reg-name" placeholder="e.g., Zikriya Khan" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-email">Email Address</label>
+          <input type="email" id="reg-email" placeholder="name@example.com" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Password</label>
+          <input type="password" id="reg-password" placeholder="At least 6 characters" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-role">Account Role</label>
+          <select id="reg-role" required>
+            <option value="student" selected>Student (Take Quizzes & Learn)</option>
+            <option value="instructor">Instructor (Create Courses & Quizzes)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Course Lesson Detail Modal -->
+  <div class="modal-overlay" id="detail-modal" role="dialog" aria-modal="true" style="display: none;">
+    <div class="modal-card">
+      <button class="modal-close-btn" id="modal-close-btn" type="button">&times;</button>
       <span class="category-badge" id="modal-category">Category</span>
       <h3 style="margin: 12px 0 8px; font-size: 22px;" id="modal-title">Course Title</h3>
       <p style="color: var(--text-muted); font-size: 14px;" id="modal-desc">Description</p>
       
-      <h4 style="margin-top: 20px; font-size: 15px; color: var(--secondary);">Lesson Overview (Database Content)</h4>
+      <h4 style="margin-top: 20px; font-size: 15px; color: var(--secondary);">Lesson Overview</h4>
       <div class="lesson-box" id="modal-lesson">Lesson text will appear here.</div>
 
-      <div class="info-callout">
-        💡 <strong>Day 1 Milestone:</strong> Course data successfully verified from SQLite database schema. Authentication and quiz submission flows activate on Days 2 & 3.
-      </div>
-      
       <div style="margin-top: 22px; display: flex; justify-content: flex-end;">
         <button class="btn btn-outline" id="modal-bottom-close" type="button">Close Preview</button>
       </div>
@@ -91,7 +218,7 @@
 
   <footer>
     <div class="container">
-      <p>LearnTrack • Stack & Scale Remote Internship 2026 • Week 02 Milestone 1</p>
+      <p>LearnTrack • Stack & Scale Remote Internship 2026 • Week 02 Milestone 2</p>
     </div>
   </footer>
 
