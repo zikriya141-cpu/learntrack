@@ -1,7 +1,8 @@
-// LearnTrack - Frontend Logic & Authentication (Day 2)
+// LearnTrack - Frontend Logic & Quiz Operations (Day 3)
 
 let courses = [];
 let currentUser = JSON.parse(localStorage.getItem('learntrack_user')) || null;
+let currentActiveQuizCourseId = null;
 
 // DOM Elements
 const courseListEl = document.getElementById('course-list');
@@ -21,7 +22,13 @@ const logoutBtn = document.getElementById('logout-btn');
 const instructorPanel = document.getElementById('instructor-panel');
 const studentPanel = document.getElementById('student-panel');
 const createCourseForm = document.getElementById('create-course-form');
+const addQuestionForm = document.getElementById('add-question-form');
+const targetCourseSelect = document.getElementById('target-course-select');
 const testUnauthorizedBtn = document.getElementById('test-unauthorized-btn');
+
+// Studio Tabs
+const tabCreateCourse = document.getElementById('tab-create-course');
+const tabAddQuestion = document.getElementById('tab-add-question');
 
 // Auth Modal Elements
 const authModal = document.getElementById('auth-modal');
@@ -34,6 +41,17 @@ const loginEmailInput = document.getElementById('login-email');
 const loginPasswordInput = document.getElementById('login-password');
 const demoInstructorBtn = document.getElementById('demo-instructor-btn');
 const demoStudentBtn = document.getElementById('demo-student-btn');
+
+// Quiz Modal Elements (Day 3 Feature)
+const quizModal = document.getElementById('quiz-modal');
+const closeQuizBtn = document.getElementById('close-quiz-btn');
+const cancelQuizBtn = document.getElementById('cancel-quiz-btn');
+const quizCourseTitle = document.getElementById('quiz-course-title');
+const quizCourseBadge = document.getElementById('quiz-course-badge');
+const quizQuestionsContainer = document.getElementById('quiz-questions-container');
+const quizForm = document.getElementById('quiz-form');
+const quizResultBox = document.getElementById('quiz-result-box');
+const submitQuizBtn = document.getElementById('submit-quiz-btn');
 
 // Detail Modal Elements
 const detailModal = document.getElementById('detail-modal');
@@ -71,14 +89,12 @@ function showAlert(message, type = 'success') {
 
 function updateUIForUser() {
   if (!currentUser) {
-    // Logged Out (Guest Mode)
     authLoggedOut.style.display = 'flex';
     authLoggedIn.style.display = 'none';
     instructorPanel.style.display = 'none';
     studentPanel.style.display = 'none';
     if (currentRoleStat) currentRoleStat.textContent = 'Guest';
   } else {
-    // Logged In Mode
     authLoggedOut.style.display = 'none';
     authLoggedIn.style.display = 'flex';
     navUserName.textContent = currentUser.name;
@@ -88,6 +104,7 @@ function updateUIForUser() {
     if (currentUser.role === 'instructor') {
       instructorPanel.style.display = 'block';
       studentPanel.style.display = 'none';
+      populateCourseSelect();
     } else {
       instructorPanel.style.display = 'none';
       studentPanel.style.display = 'block';
@@ -95,17 +112,199 @@ function updateUIForUser() {
   }
 }
 
+function populateCourseSelect() {
+  if (!targetCourseSelect) return;
+  targetCourseSelect.innerHTML = courses.map(c => 
+    `<option value="${c.id}">${escapeHtml(c.title)} (${c.category})</option>`
+  ).join('');
+}
+
+// ==========================================
+// INSTRUCTOR STUDIO TABS (Day 3 Feature)
+// ==========================================
+
+tabCreateCourse.addEventListener('click', () => {
+  tabCreateCourse.classList.add('active');
+  tabAddQuestion.classList.remove('active');
+  createCourseForm.style.display = 'block';
+  addQuestionForm.style.display = 'none';
+});
+
+tabAddQuestion.addEventListener('click', () => {
+  tabAddQuestion.classList.add('active');
+  tabCreateCourse.classList.remove('active');
+  addQuestionForm.style.display = 'block';
+  createCourseForm.style.display = 'none';
+  populateCourseSelect();
+});
+
+// Handle Adding a Question
+addQuestionForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  if (!currentUser || currentUser.role !== 'instructor') {
+    showAlert('Access Denied: Only instructors can add questions.', 'error');
+    return;
+  }
+
+  const courseId = targetCourseSelect.value;
+  const payload = {
+    question_text: document.getElementById('q-text').value.trim(),
+    option_a: document.getElementById('opt-a').value.trim(),
+    option_b: document.getElementById('opt-b').value.trim(),
+    option_c: document.getElementById('opt-c').value.trim(),
+    option_d: document.getElementById('opt-d').value.trim(),
+    correct_option: document.getElementById('correct-opt').value,
+    role: currentUser.role
+  };
+
+  try {
+    const res = await fetch(`/api/courses/${courseId}/questions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to add question.');
+
+    showAlert(`Success: Question added to course successfully!`, 'success');
+    addQuestionForm.reset();
+    await loadCourses();
+  } catch (err) {
+    showAlert(err.message, 'error');
+  }
+});
+
+// ==========================================
+// QUIZ FLOW (Day 3 Student Feature)
+// ==========================================
+
+window.openQuizModal = async function(courseId) {
+  currentActiveQuizCourseId = courseId;
+  const course = courses.find(c => c.id === courseId);
+  if (!course) return;
+
+  quizCourseTitle.textContent = `${course.title} — Quiz`;
+  quizCourseBadge.textContent = course.category;
+  quizResultBox.style.display = 'none';
+  submitQuizBtn.style.display = 'inline-flex';
+  quizQuestionsContainer.innerHTML = '<p style="color: var(--text-muted);">Loading quiz questions...</p>';
+  quizModal.style.display = 'flex';
+
+  try {
+    const res = await fetch(`/api/courses/${courseId}/questions`);
+    if (!res.ok) throw new Error('Failed to load questions.');
+    const questions = await res.json();
+
+    if (questions.length === 0) {
+      quizQuestionsContainer.innerHTML = `
+        <div style="text-align: center; padding: 24px; color: var(--text-muted);">
+          <p>No questions have been added to this course yet.</p>
+          <small>Instructors can add multiple-choice questions from the Instructor Studio.</small>
+        </div>
+      `;
+      submitQuizBtn.style.display = 'none';
+      return;
+    }
+
+    quizQuestionsContainer.innerHTML = questions.map((q, idx) => `
+      <div class="quiz-question-card">
+        <p class="quiz-q-prompt">Q${idx + 1}. ${escapeHtml(q.question_text)}</p>
+        <div class="quiz-options-group">
+          <label class="quiz-option-label">
+            <input type="radio" name="question_${q.id}" value="A" required />
+            <span><strong>A.</strong> ${escapeHtml(q.option_a)}</span>
+          </label>
+          <label class="quiz-option-label">
+            <input type="radio" name="question_${q.id}" value="B" required />
+            <span><strong>B.</strong> ${escapeHtml(q.option_b)}</span>
+          </label>
+          <label class="quiz-option-label">
+            <input type="radio" name="question_${q.id}" value="C" required />
+            <span><strong>C.</strong> ${escapeHtml(q.option_c)}</span>
+          </label>
+          <label class="quiz-option-label">
+            <input type="radio" name="question_${q.id}" value="D" required />
+            <span><strong>D.</strong> ${escapeHtml(q.option_d)}</span>
+          </label>
+        </div>
+      </div>
+    `).join('');
+
+  } catch (err) {
+    quizQuestionsContainer.innerHTML = `<p style="color: var(--danger);">${err.message}</p>`;
+  }
+};
+
+// Handle Quiz Submission
+quizForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!currentActiveQuizCourseId) return;
+
+  // Gather answers
+  const formData = new FormData(quizForm);
+  const answers = {};
+
+  for (let [key, val] of formData.entries()) {
+    if (key.startsWith('question_')) {
+      const qId = key.replace('question_', '');
+      answers[qId] = val;
+    }
+  }
+
+  const studentName = currentUser ? currentUser.name : 'Student Ali';
+
+  try {
+    const res = await fetch(`/api/courses/${currentActiveQuizCourseId}/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers, student_name: studentName })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to submit quiz.');
+
+    // Show Assessment Results
+    const att = data.attempt;
+    quizResultBox.innerHTML = `
+      <div class="quiz-score-num">${att.percentage}%</div>
+      <h4 style="margin: 6px 0; font-size: 18px; color: ${att.passed ? 'var(--success)' : 'var(--danger)'};">
+        ${att.passed ? '🎉 Congratulations! You Passed!' : 'Needs Review - Keep Practicing!'}
+      </h4>
+      <p style="font-size: 14px; color: var(--text-muted);">
+        You scored <strong>${att.score} out of ${att.total_questions}</strong> correct answers.
+      </p>
+      <small style="color: var(--text-muted); display: block; margin-top: 6px;">
+        Saved to database for student: <strong>${escapeHtml(studentName)}</strong>
+      </small>
+    `;
+    quizResultBox.style.display = 'block';
+    submitQuizBtn.style.display = 'none';
+
+    showAlert(`Quiz submitted! Result: ${att.score}/${att.total_questions} (${att.percentage}%)`, 'success');
+  } catch (err) {
+    showAlert(err.message, 'error');
+  }
+});
+
+function closeQuiz() {
+  quizModal.style.display = 'none';
+  quizForm.reset();
+}
+
+closeQuizBtn.addEventListener('click', closeQuiz);
+cancelQuizBtn.addEventListener('click', closeQuiz);
+quizModal.addEventListener('click', (e) => {
+  if (e.target === quizModal) closeQuiz();
+});
+
 // ==========================================
 // AUTHENTICATION MODAL LOGIC
 // ==========================================
 
-function openAuthModal() {
-  authModal.style.display = 'flex';
-}
-
-function closeAuthModal() {
-  authModal.style.display = 'none';
-}
+function openAuthModal() { authModal.style.display = 'flex'; }
+function closeAuthModal() { authModal.style.display = 'none'; }
 
 openAuthBtn.addEventListener('click', openAuthModal);
 closeAuthBtn.addEventListener('click', closeAuthModal);
@@ -113,7 +312,6 @@ authModal.addEventListener('click', (e) => {
   if (e.target === authModal) closeAuthModal();
 });
 
-// Switch Tabs
 tabLogin.addEventListener('click', () => {
   tabLogin.classList.add('active');
   tabRegister.classList.remove('active');
@@ -128,7 +326,6 @@ tabRegister.addEventListener('click', () => {
   loginForm.style.display = 'none';
 });
 
-// Quick 1-Click Demo Buttons
 demoInstructorBtn.addEventListener('click', () => {
   loginEmailInput.value = 'instructor@learntrack.com';
   loginPasswordInput.value = 'pass123';
@@ -141,7 +338,6 @@ demoStudentBtn.addEventListener('click', () => {
   loginForm.dispatchEvent(new Event('submit'));
 });
 
-// Login Form Submit
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = loginEmailInput.value.trim();
@@ -167,7 +363,6 @@ loginForm.addEventListener('submit', async (e) => {
   }
 });
 
-// Register Form Submit
 registerForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = document.getElementById('reg-name').value.trim();
@@ -195,19 +390,17 @@ registerForm.addEventListener('submit', async (e) => {
   }
 });
 
-// Logout
 logoutBtn.addEventListener('click', () => {
   currentUser = null;
   localStorage.removeItem('learntrack_user');
   updateUIForUser();
-  showAlert('Signed out successfully. You are now viewing as Guest.', 'success');
+  showAlert('Signed out successfully. Viewing as Guest.', 'success');
 });
 
 // ==========================================
 // INSTRUCTOR COURSE CREATION & SECURITY CHECK
 // ==========================================
 
-// Handle Course Creation
 createCourseForm.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -235,7 +428,7 @@ createCourseForm.addEventListener('submit', async (e) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to create course.');
 
-    showAlert(`Success: "${data.course.title}" has been published to the catalog!`, 'success');
+    showAlert(`Success: "${data.course.title}" has been published to catalog!`, 'success');
     createCourseForm.reset();
     await loadCourses();
   } catch (err) {
@@ -243,10 +436,8 @@ createCourseForm.addEventListener('submit', async (e) => {
   }
 });
 
-// Test Unauthorized Action (Student trying to trigger instructor API)
 testUnauthorizedBtn.addEventListener('click', async () => {
   try {
-    // Attempting instructor course creation using student role
     const res = await fetch('/api/courses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -260,7 +451,6 @@ testUnauthorizedBtn.addEventListener('click', async () => {
 
     const data = await res.json();
     if (!res.ok) {
-      // Demonstrates 403 Forbidden Error Evidence
       showAlert(`⚠️ 403 Forbidden: ${data.error}`, 'error');
     }
   } catch (err) {
@@ -278,6 +468,7 @@ async function loadCourses() {
     if (!res.ok) throw new Error('Failed to load courses.');
     courses = await res.json();
     renderCourses();
+    populateCourseSelect();
   } catch (err) {
     courseListEl.innerHTML = `<p style="color: var(--danger);">Could not connect to database.</p>`;
   }
@@ -295,7 +486,7 @@ function renderCourses() {
     <article class="course-card">
       <div class="course-card-top">
         <span class="category-badge">${escapeHtml(c.category)}</span>
-        <span class="level-badge">Verified DB</span>
+        <span class="level-badge">${c.question_count || 0} Questions</span>
       </div>
       <h4 class="course-title">${escapeHtml(c.title)}</h4>
       <p class="course-desc">${escapeHtml(c.description)}</p>
@@ -305,7 +496,10 @@ function renderCourses() {
           <span class="instructor-name">${escapeHtml(c.instructor_name || 'Instructor')}</span>
         </div>
       </div>
-      <button class="btn btn-primary" type="button" onclick="showCourseDetails(${c.id})">View Lessons & Overview</button>
+      <div class="card-btn-row">
+        <button class="btn btn-outline" type="button" onclick="showCourseDetails(${c.id})">Read Lessons</button>
+        <button class="btn btn-primary" type="button" onclick="openQuizModal(${c.id})">Take Quiz</button>
+      </div>
     </article>
   `).join('');
 }
@@ -320,10 +514,7 @@ window.showCourseDetails = function (id) {
   detailModal.style.display = 'flex';
 };
 
-function closeDetailModal() {
-  detailModal.style.display = 'none';
-}
-
+function closeDetailModal() { detailModal.style.display = 'none'; }
 modalCloseBtn.addEventListener('click', closeDetailModal);
 modalBottomClose.addEventListener('click', closeDetailModal);
 detailModal.addEventListener('click', (e) => {

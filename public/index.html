@@ -19,14 +19,12 @@
         </div>
       </a>
       
-      <!-- User Auth State in Navbar -->
-      <div class="nav-actions" id="nav-actions">
-        <!-- Logged Out State -->
+      <!-- User Auth State -->
+      <div class="nav-actions">
         <div id="auth-logged-out" class="auth-group">
           <button class="btn btn-primary" id="open-auth-btn" type="button">Sign In / Register</button>
         </div>
 
-        <!-- Logged In State (Hidden by default) -->
         <div id="auth-logged-in" class="auth-group" style="display: none;">
           <div class="user-badge" id="user-badge">
             <span class="user-role-dot"></span>
@@ -48,9 +46,9 @@
   <section class="hero">
     <div class="container">
       <div class="hero-card">
-        <span class="hero-tag">Week 02 Full-Stack • Day 2</span>
-        <h2>Role-Based Learning Platform with <span class="hero-gradient-text">Protected Actions</span></h2>
-        <p>Instructors author structured courses & quizzes; students enroll, study lesson notes, and attempt scored tests.</p>
+        <span class="hero-tag">Week 02 Full-Stack • Day 3</span>
+        <h2>Interactive Learning & <span class="hero-gradient-text">Automated Quiz Assessment</span></h2>
+        <p>Instructors publish lessons and author multiple-choice quizzes; students test their mastery with verified submissions.</p>
         
         <div class="stats-row">
           <div class="stat-item">
@@ -59,11 +57,11 @@
           </div>
           <div class="stat-item">
             <span class="stat-num" id="current-role-stat">Guest</span>
-            <span class="stat-label">Current Session</span>
+            <span class="stat-label">Current Role</span>
           </div>
           <div class="stat-item">
-            <span class="stat-num">Bcrypt</span>
-            <span class="stat-label">Encrypted Auth</span>
+            <span class="stat-num">SQLite</span>
+            <span class="stat-label">Relational Tests</span>
           </div>
         </div>
       </div>
@@ -73,40 +71,94 @@
   <!-- Main Content Layout -->
   <main class="container">
 
-    <!-- 1. Instructor Course Creation Card (Shown for Instructors) -->
+    <!-- 1. Instructor Studio Panel (Shown for Instructors) -->
     <section class="card instructor-panel" id="instructor-panel" style="display: none;">
       <div class="panel-header">
         <div>
-          <h3>Instructor Studio: Create New Course</h3>
-          <p>Publish a technical course with structured lesson text (Instructors Only).</p>
+          <h3>Instructor Studio</h3>
+          <p>Create new courses or author multiple-choice questions for existing courses.</p>
         </div>
-        <span class="category-badge">Instructor Exclusive</span>
+        <div class="studio-tabs">
+          <button type="button" class="studio-tab active" id="tab-create-course">1. Create Course</button>
+          <button type="button" class="studio-tab" id="tab-add-question">2. Add Quiz Question</button>
+        </div>
       </div>
 
+      <!-- Form A: Create Course -->
       <form id="create-course-form">
         <div class="form-row">
           <div class="form-group flex-2">
             <label for="course-title">Course Title <span class="required">*</span></label>
-            <input type="text" id="course-title" placeholder="e.g., Modern API Security & JWT Authentication" required />
+            <input type="text" id="course-title" placeholder="e.g., Database Design & SQL Normalization" required />
           </div>
           <div class="form-group flex-1">
             <label for="course-category">Category</label>
-            <input type="text" id="course-category" placeholder="e.g., Cybersecurity" />
+            <input type="text" id="course-category" placeholder="e.g., Databases" />
           </div>
         </div>
 
         <div class="form-group">
           <label for="course-desc">Course Description <span class="required">*</span></label>
-          <textarea id="course-desc" rows="2" placeholder="Brief summary of what students will achieve..." required></textarea>
+          <textarea id="course-desc" rows="2" placeholder="Summary of course outcomes..." required></textarea>
         </div>
 
         <div class="form-group">
-          <label for="course-lessons">Lesson Content / Notes <span class="required">*</span></label>
-          <textarea id="course-lessons" rows="4" placeholder="Write lesson reading material here..." required></textarea>
+          <label for="course-lessons">Lesson Reading Content <span class="required">*</span></label>
+          <textarea id="course-lessons" rows="3" placeholder="Write lesson notes here..." required></textarea>
         </div>
 
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" id="publish-btn">Publish Course to Catalog</button>
+          <button type="submit" class="btn btn-primary">Publish Course</button>
+        </div>
+      </form>
+
+      <!-- Form B: Add Question to Course (Day 3 Feature) -->
+      <form id="add-question-form" style="display: none;">
+        <div class="form-group">
+          <label for="target-course-select">Select Course to Add Question <span class="required">*</span></label>
+          <select id="target-course-select" required></select>
+        </div>
+
+        <div class="form-group">
+          <label for="q-text">Question Prompt <span class="required">*</span></label>
+          <input type="text" id="q-text" placeholder="e.g., What does SQL stand for?" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="opt-a">Option A <span class="required">*</span></label>
+            <input type="text" id="opt-a" placeholder="Choice A" required />
+          </div>
+          <div class="form-group flex-1">
+            <label for="opt-b">Option B <span class="required">*</span></label>
+            <input type="text" id="opt-b" placeholder="Choice B" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="opt-c">Option C <span class="required">*</span></label>
+            <input type="text" id="opt-c" placeholder="Choice C" required />
+          </div>
+          <div class="form-group flex-1">
+            <label for="opt-d">Option D <span class="required">*</span></label>
+            <input type="text" id="opt-d" placeholder="Choice D" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="correct-opt">Correct Answer Key <span class="required">*</span></label>
+            <select id="correct-opt" required>
+              <option value="A">Option A</option>
+              <option value="B">Option B</option>
+              <option value="C">Option C</option>
+              <option value="D">Option D</option>
+            </select>
+          </div>
+          <div class="form-group flex-1 form-actions" style="margin-top: 24px;">
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Save Question to Database</button>
+          </div>
         </div>
       </form>
     </section>
@@ -115,10 +167,9 @@
     <section class="card student-panel" id="student-panel" style="display: none;">
       <div class="student-info-box">
         <div>
-          <h4>Student Account Active</h4>
-          <p>You have student access: you can browse all courses, read lessons, and attempt quizzes.</p>
+          <h4>Student Dashboard Active</h4>
+          <p>Browse courses below, read lesson notes, and attempt quizzes to test your understanding.</p>
         </div>
-        <!-- Button to demonstrate 403 Forbidden Security Evidence -->
         <button class="btn btn-danger-outline" id="test-unauthorized-btn" type="button">
           Test Instructor Action (Demonstrate 403 Block)
         </button>
@@ -129,8 +180,8 @@
     <section class="section-layout">
       <div class="section-header">
         <div>
-          <h3>Course Catalog</h3>
-          <p>Browse verified courses from the SQLite database.</p>
+          <h3>Course Catalog & Practice Quizzes</h3>
+          <p>Read lesson materials or test your knowledge with interactive multiple-choice quizzes.</p>
         </div>
       </div>
 
@@ -140,6 +191,32 @@
     </section>
 
   </main>
+
+  <!-- Interactive Quiz Modal (Day 3 Feature) -->
+  <div class="modal-overlay" id="quiz-modal" role="dialog" aria-modal="true" style="display: none;">
+    <div class="modal-card quiz-modal-card">
+      <button class="modal-close-btn" id="close-quiz-btn" type="button">&times;</button>
+      
+      <div class="quiz-header">
+        <span class="category-badge" id="quiz-course-badge">Quiz</span>
+        <h3 id="quiz-course-title" style="margin: 8px 0 4px; font-size: 22px;">Course Quiz</h3>
+        <p id="quiz-status-text" style="color: var(--text-muted); font-size: 13.5px;">Answer all questions below and submit for instant evaluation.</p>
+      </div>
+
+      <!-- Quiz Questions Container -->
+      <form id="quiz-form">
+        <div id="quiz-questions-container" class="quiz-questions-list"></div>
+
+        <!-- Quiz Result Banner (Shown after submission) -->
+        <div id="quiz-result-box" class="quiz-result-box" style="display: none;"></div>
+
+        <div class="quiz-footer-actions">
+          <button type="button" class="btn btn-outline" id="cancel-quiz-btn">Close</button>
+          <button type="submit" class="btn btn-primary" id="submit-quiz-btn">Submit Quiz Answers</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Sign In / Registration Modal -->
   <div class="modal-overlay" id="auth-modal" role="dialog" aria-modal="true" style="display: none;">
@@ -151,7 +228,6 @@
         <button class="tab-btn" id="tab-register" type="button">Create Account</button>
       </div>
 
-      <!-- Sign In Form -->
       <form id="login-form">
         <div class="form-group">
           <label for="login-email">Email Address</label>
@@ -163,7 +239,6 @@
         </div>
         <button type="submit" class="btn btn-primary btn-block">Sign In</button>
 
-        <!-- Quick 1-Click Demo Buttons -->
         <div class="quick-demo-box">
           <span>Quick Testing Shortcuts:</span>
           <div class="quick-btns">
@@ -173,7 +248,6 @@
         </div>
       </form>
 
-      <!-- Register Form (Hidden by default) -->
       <form id="register-form" style="display: none;">
         <div class="form-group">
           <label for="reg-name">Full Name</label>
@@ -207,18 +281,18 @@
       <h3 style="margin: 12px 0 8px; font-size: 22px;" id="modal-title">Course Title</h3>
       <p style="color: var(--text-muted); font-size: 14px;" id="modal-desc">Description</p>
       
-      <h4 style="margin-top: 20px; font-size: 15px; color: var(--secondary);">Lesson Overview</h4>
+      <h4 style="margin-top: 20px; font-size: 15px; color: var(--secondary);">Lesson Notes</h4>
       <div class="lesson-box" id="modal-lesson">Lesson text will appear here.</div>
 
-      <div style="margin-top: 22px; display: flex; justify-content: flex-end;">
-        <button class="btn btn-outline" id="modal-bottom-close" type="button">Close Preview</button>
+      <div style="margin-top: 22px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-outline" id="modal-bottom-close" type="button">Close</button>
       </div>
     </div>
   </div>
 
   <footer>
     <div class="container">
-      <p>LearnTrack • Stack & Scale Remote Internship 2026 • Week 02 Milestone 2</p>
+      <p>LearnTrack • Stack & Scale Remote Internship 2026 • Week 02 Milestone 3</p>
     </div>
   </footer>
 
