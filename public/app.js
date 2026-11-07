@@ -1,16 +1,12 @@
-// LearnTrack - Frontend Logic & Quiz Operations (Day 3)
-
 let courses = [];
 let currentUser = JSON.parse(localStorage.getItem('learntrack_user')) || null;
 let currentActiveQuizCourseId = null;
 
-// DOM Elements
 const courseListEl = document.getElementById('course-list');
 const totalCoursesEl = document.getElementById('total-courses');
 const currentRoleStat = document.getElementById('current-role-stat');
 const feedbackAlert = document.getElementById('feedback-alert');
 
-// Auth Navbar Elements
 const authLoggedOut = document.getElementById('auth-logged-out');
 const authLoggedIn = document.getElementById('auth-logged-in');
 const navUserName = document.getElementById('nav-user-name');
@@ -18,19 +14,19 @@ const navUserRole = document.getElementById('nav-user-role');
 const openAuthBtn = document.getElementById('open-auth-btn');
 const logoutBtn = document.getElementById('logout-btn');
 
-// Panels
 const instructorPanel = document.getElementById('instructor-panel');
 const studentPanel = document.getElementById('student-panel');
 const createCourseForm = document.getElementById('create-course-form');
 const addQuestionForm = document.getElementById('add-question-form');
 const targetCourseSelect = document.getElementById('target-course-select');
 const testUnauthorizedBtn = document.getElementById('test-unauthorized-btn');
+const viewHistoryBtn = document.getElementById('view-history-btn');
+const attemptsHistorySection = document.getElementById('attempts-history-section');
+const attemptsTableContainer = document.getElementById('attempts-table-container');
 
-// Studio Tabs
 const tabCreateCourse = document.getElementById('tab-create-course');
 const tabAddQuestion = document.getElementById('tab-add-question');
 
-// Auth Modal Elements
 const authModal = document.getElementById('auth-modal');
 const closeAuthBtn = document.getElementById('close-auth-btn');
 const tabLogin = document.getElementById('tab-login');
@@ -42,7 +38,6 @@ const loginPasswordInput = document.getElementById('login-password');
 const demoInstructorBtn = document.getElementById('demo-instructor-btn');
 const demoStudentBtn = document.getElementById('demo-student-btn');
 
-// Quiz Modal Elements (Day 3 Feature)
 const quizModal = document.getElementById('quiz-modal');
 const closeQuizBtn = document.getElementById('close-quiz-btn');
 const cancelQuizBtn = document.getElementById('cancel-quiz-btn');
@@ -53,7 +48,6 @@ const quizForm = document.getElementById('quiz-form');
 const quizResultBox = document.getElementById('quiz-result-box');
 const submitQuizBtn = document.getElementById('submit-quiz-btn');
 
-// Detail Modal Elements
 const detailModal = document.getElementById('detail-modal');
 const modalTitle = document.getElementById('modal-title');
 const modalCategory = document.getElementById('modal-category');
@@ -61,10 +55,6 @@ const modalDesc = document.getElementById('modal-desc');
 const modalLesson = document.getElementById('modal-lesson');
 const modalCloseBtn = document.getElementById('modal-close-btn');
 const modalBottomClose = document.getElementById('modal-bottom-close');
-
-// ==========================================
-// UTILITY FUNCTIONS
-// ==========================================
 
 function escapeHtml(str) {
   const d = document.createElement('div');
@@ -77,15 +67,8 @@ function showAlert(message, type = 'success') {
   feedbackAlert.className = 'alert ' + (type === 'error' ? 'alert-error' : 'alert-success');
   feedbackAlert.style.display = 'flex';
   window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  setTimeout(() => {
-    feedbackAlert.style.display = 'none';
-  }, 5000);
+  setTimeout(() => { feedbackAlert.style.display = 'none'; }, 4000);
 }
-
-// ==========================================
-// UI SESSION & ROLE STATE
-// ==========================================
 
 function updateUIForUser() {
   if (!currentUser) {
@@ -119,66 +102,104 @@ function populateCourseSelect() {
   ).join('');
 }
 
-// ==========================================
-// INSTRUCTOR STUDIO TABS (Day 3 Feature)
-// ==========================================
+if (tabCreateCourse) {
+  tabCreateCourse.addEventListener('click', () => {
+    tabCreateCourse.classList.add('active');
+    tabAddQuestion.classList.remove('active');
+    createCourseForm.style.display = 'block';
+    addQuestionForm.style.display = 'none';
+  });
+}
 
-tabCreateCourse.addEventListener('click', () => {
-  tabCreateCourse.classList.add('active');
-  tabAddQuestion.classList.remove('active');
-  createCourseForm.style.display = 'block';
-  addQuestionForm.style.display = 'none';
-});
+if (tabAddQuestion) {
+  tabAddQuestion.addEventListener('click', () => {
+    tabAddQuestion.classList.add('active');
+    tabCreateCourse.classList.remove('active');
+    addQuestionForm.style.display = 'block';
+    createCourseForm.style.display = 'none';
+    populateCourseSelect();
+  });
+}
 
-tabAddQuestion.addEventListener('click', () => {
-  tabAddQuestion.classList.add('active');
-  tabCreateCourse.classList.remove('active');
-  addQuestionForm.style.display = 'block';
-  createCourseForm.style.display = 'none';
-  populateCourseSelect();
-});
+if (addQuestionForm) {
+  addQuestionForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const courseId = targetCourseSelect.value;
+    const payload = {
+      question_text: document.getElementById('q-text').value.trim(),
+      option_a: document.getElementById('opt-a').value.trim(),
+      option_b: document.getElementById('opt-b').value.trim(),
+      option_c: document.getElementById('opt-c').value.trim(),
+      option_d: document.getElementById('opt-d').value.trim(),
+      correct_option: document.getElementById('correct-opt').value,
+      role: currentUser ? currentUser.role : 'instructor'
+    };
 
-// Handle Adding a Question
-addQuestionForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
+    try {
+      const res = await fetch(`/api/courses/${courseId}/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to add question');
+      showAlert('Question added to course successfully!', 'success');
+      addQuestionForm.reset();
+      await loadCourses();
+    } catch (err) {
+      showAlert(err.message, 'error');
+    }
+  });
+}
 
-  if (!currentUser || currentUser.role !== 'instructor') {
-    showAlert('Access Denied: Only instructors can add questions.', 'error');
-    return;
-  }
+// Student History (Day 4 & 5 Feature)
+if (viewHistoryBtn) {
+  viewHistoryBtn.addEventListener('click', async () => {
+    if (attemptsHistorySection.style.display === 'block') {
+      attemptsHistorySection.style.display = 'none';
+      return;
+    }
 
-  const courseId = targetCourseSelect.value;
-  const payload = {
-    question_text: document.getElementById('q-text').value.trim(),
-    option_a: document.getElementById('opt-a').value.trim(),
-    option_b: document.getElementById('opt-b').value.trim(),
-    option_c: document.getElementById('opt-c').value.trim(),
-    option_d: document.getElementById('opt-d').value.trim(),
-    correct_option: document.getElementById('correct-opt').value,
-    role: currentUser.role
-  };
+    try {
+      const res = await fetch('/api/attempts');
+      const attempts = await res.json();
 
-  try {
-    const res = await fetch(`/api/courses/${courseId}/questions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to add question.');
-
-    showAlert(`Success: Question added to course successfully!`, 'success');
-    addQuestionForm.reset();
-    await loadCourses();
-  } catch (err) {
-    showAlert(err.message, 'error');
-  }
-});
-
-// ==========================================
-// QUIZ FLOW (Day 3 Student Feature)
-// ==========================================
+      if (attempts.length === 0) {
+        attemptsTableContainer.innerHTML = '<p style="color: var(--text-muted); font-size: 13.5px;">No quiz attempts logged yet. Complete a quiz below!</p>';
+      } else {
+        attemptsTableContainer.innerHTML = `
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted);">
+                  <th style="padding: 8px 10px;">Student</th>
+                  <th style="padding: 8px 10px;">Course</th>
+                  <th style="padding: 8px 10px;">Score</th>
+                  <th style="padding: 8px 10px;">Percentage</th>
+                  <th style="padding: 8px 10px;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${attempts.map(a => `
+                  <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 10px;">${escapeHtml(a.student_name)}</td>
+                    <td style="padding: 10px; font-weight: 600;">${escapeHtml(a.course_title)}</td>
+                    <td style="padding: 10px;">${a.score} / ${a.total_questions}</td>
+                    <td style="padding: 10px;"><strong>${a.percentage}%</strong></td>
+                    <td style="padding: 10px;"><span class="level-badge" style="background: ${a.percentage >= 50 ? 'var(--success-light)' : 'var(--danger-light)'}; color: ${a.percentage >= 50 ? '#065f46' : '#991b1b'}">${a.percentage >= 50 ? 'Passed' : 'Review'}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+      attemptsHistorySection.style.display = 'block';
+    } catch (e) {
+      showAlert('Could not load attempts history.', 'error');
+    }
+  });
+}
 
 window.openQuizModal = async function(courseId) {
   currentActiveQuizCourseId = courseId;
@@ -194,16 +215,10 @@ window.openQuizModal = async function(courseId) {
 
   try {
     const res = await fetch(`/api/courses/${courseId}/questions`);
-    if (!res.ok) throw new Error('Failed to load questions.');
     const questions = await res.json();
 
     if (questions.length === 0) {
-      quizQuestionsContainer.innerHTML = `
-        <div style="text-align: center; padding: 24px; color: var(--text-muted);">
-          <p>No questions have been added to this course yet.</p>
-          <small>Instructors can add multiple-choice questions from the Instructor Studio.</small>
-        </div>
-      `;
+      quizQuestionsContainer.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--text-muted);">No questions available yet for this course.</p>';
       submitQuizBtn.style.display = 'none';
       return;
     }
@@ -212,48 +227,27 @@ window.openQuizModal = async function(courseId) {
       <div class="quiz-question-card">
         <p class="quiz-q-prompt">Q${idx + 1}. ${escapeHtml(q.question_text)}</p>
         <div class="quiz-options-group">
-          <label class="quiz-option-label">
-            <input type="radio" name="question_${q.id}" value="A" required />
-            <span><strong>A.</strong> ${escapeHtml(q.option_a)}</span>
-          </label>
-          <label class="quiz-option-label">
-            <input type="radio" name="question_${q.id}" value="B" required />
-            <span><strong>B.</strong> ${escapeHtml(q.option_b)}</span>
-          </label>
-          <label class="quiz-option-label">
-            <input type="radio" name="question_${q.id}" value="C" required />
-            <span><strong>C.</strong> ${escapeHtml(q.option_c)}</span>
-          </label>
-          <label class="quiz-option-label">
-            <input type="radio" name="question_${q.id}" value="D" required />
-            <span><strong>D.</strong> ${escapeHtml(q.option_d)}</span>
-          </label>
+          <label class="quiz-option-label"><input type="radio" name="question_${q.id}" value="A" required /> <span><strong>A.</strong> ${escapeHtml(q.option_a)}</span></label>
+          <label class="quiz-option-label"><input type="radio" name="question_${q.id}" value="B" required /> <span><strong>B.</strong> ${escapeHtml(q.option_b)}</span></label>
+          <label class="quiz-option-label"><input type="radio" name="question_${q.id}" value="C" required /> <span><strong>C.</strong> ${escapeHtml(q.option_c)}</span></label>
+          <label class="quiz-option-label"><input type="radio" name="question_${q.id}" value="D" required /> <span><strong>D.</strong> ${escapeHtml(q.option_d)}</span></label>
         </div>
       </div>
     `).join('');
-
   } catch (err) {
     quizQuestionsContainer.innerHTML = `<p style="color: var(--danger);">${err.message}</p>`;
   }
 };
 
-// Handle Quiz Submission
 quizForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  if (!currentActiveQuizCourseId) return;
-
-  // Gather answers
   const formData = new FormData(quizForm);
   const answers = {};
-
-  for (let [key, val] of formData.entries()) {
-    if (key.startsWith('question_')) {
-      const qId = key.replace('question_', '');
-      answers[qId] = val;
-    }
+  for (let [k, v] of formData.entries()) {
+    if (k.startsWith('question_')) answers[k.replace('question_', '')] = v;
   }
 
-  const studentName = currentUser ? currentUser.name : 'Student Ali';
+  const studentName = currentUser ? currentUser.name : 'Ali Ahmed';
 
   try {
     const res = await fetch(`/api/courses/${currentActiveQuizCourseId}/submit`, {
@@ -261,11 +255,9 @@ quizForm.addEventListener('submit', async (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ answers, student_name: studentName })
     });
-
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to submit quiz.');
+    if (!res.ok) throw new Error(data.error || 'Failed to evaluate quiz');
 
-    // Show Assessment Results
     const att = data.attempt;
     quizResultBox.innerHTML = `
       <div class="quiz-score-num">${att.percentage}%</div>
@@ -275,42 +267,22 @@ quizForm.addEventListener('submit', async (e) => {
       <p style="font-size: 14px; color: var(--text-muted);">
         You scored <strong>${att.score} out of ${att.total_questions}</strong> correct answers.
       </p>
-      <small style="color: var(--text-muted); display: block; margin-top: 6px;">
-        Saved to database for student: <strong>${escapeHtml(studentName)}</strong>
-      </small>
     `;
     quizResultBox.style.display = 'block';
     submitQuizBtn.style.display = 'none';
-
-    showAlert(`Quiz submitted! Result: ${att.score}/${att.total_questions} (${att.percentage}%)`, 'success');
+    showAlert(`Quiz evaluated! Score: ${att.score}/${att.total_questions}`, 'success');
   } catch (err) {
     showAlert(err.message, 'error');
   }
 });
 
-function closeQuiz() {
-  quizModal.style.display = 'none';
-  quizForm.reset();
-}
-
+function closeQuiz() { quizModal.style.display = 'none'; quizForm.reset(); }
 closeQuizBtn.addEventListener('click', closeQuiz);
 cancelQuizBtn.addEventListener('click', closeQuiz);
-quizModal.addEventListener('click', (e) => {
-  if (e.target === quizModal) closeQuiz();
-});
 
-// ==========================================
-// AUTHENTICATION MODAL LOGIC
-// ==========================================
-
-function openAuthModal() { authModal.style.display = 'flex'; }
-function closeAuthModal() { authModal.style.display = 'none'; }
-
-openAuthBtn.addEventListener('click', openAuthModal);
-closeAuthBtn.addEventListener('click', closeAuthModal);
-authModal.addEventListener('click', (e) => {
-  if (e.target === authModal) closeAuthModal();
-});
+// Auth logic
+openAuthBtn.addEventListener('click', () => { authModal.style.display = 'flex'; });
+closeAuthBtn.addEventListener('click', () => { authModal.style.display = 'none'; });
 
 tabLogin.addEventListener('click', () => {
   tabLogin.classList.add('active');
@@ -342,25 +314,20 @@ loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = loginEmailInput.value.trim();
   const password = loginPasswordInput.value;
-
   try {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
-
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to sign in.');
-
+    if (!res.ok) throw new Error(data.error || 'Login failed');
     currentUser = data.user;
     localStorage.setItem('learntrack_user', JSON.stringify(currentUser));
-    closeAuthModal();
+    authModal.style.display = 'none';
     updateUIForUser();
-    showAlert(`Welcome back, ${currentUser.name}! You are signed in as ${currentUser.role.toUpperCase()}.`, 'success');
-  } catch (err) {
-    showAlert(err.message, 'error');
-  }
+    showAlert(`Welcome back, ${currentUser.name}!`, 'success');
+  } catch (err) { showAlert(err.message, 'error'); }
 });
 
 registerForm.addEventListener('submit', async (e) => {
@@ -369,119 +336,78 @@ registerForm.addEventListener('submit', async (e) => {
   const email = document.getElementById('reg-email').value.trim();
   const password = document.getElementById('reg-password').value;
   const role = document.getElementById('reg-role').value;
-
   try {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password, role })
     });
-
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to register.');
-
+    if (!res.ok) throw new Error(data.error || 'Register failed');
     currentUser = data.user;
     localStorage.setItem('learntrack_user', JSON.stringify(currentUser));
-    closeAuthModal();
+    authModal.style.display = 'none';
     updateUIForUser();
-    showAlert(`Account created successfully! Logged in as ${currentUser.role.toUpperCase()}.`, 'success');
-  } catch (err) {
-    showAlert(err.message, 'error');
-  }
+    showAlert('Account created successfully!', 'success');
+  } catch (err) { showAlert(err.message, 'error'); }
 });
 
 logoutBtn.addEventListener('click', () => {
   currentUser = null;
   localStorage.removeItem('learntrack_user');
   updateUIForUser();
-  showAlert('Signed out successfully. Viewing as Guest.', 'success');
+  showAlert('Signed out successfully.', 'success');
 });
-
-// ==========================================
-// INSTRUCTOR COURSE CREATION & SECURITY CHECK
-// ==========================================
 
 createCourseForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-
-  if (!currentUser || currentUser.role !== 'instructor') {
-    showAlert('Access Denied: Only instructors can publish courses.', 'error');
-    return;
-  }
-
   const payload = {
     title: document.getElementById('course-title').value.trim(),
     category: document.getElementById('course-category').value.trim() || 'General',
     description: document.getElementById('course-desc').value.trim(),
     lessons_text: document.getElementById('course-lessons').value.trim(),
-    instructor_name: currentUser.name,
-    role: currentUser.role
+    instructor_name: currentUser ? currentUser.name : 'Instructor',
+    role: currentUser ? currentUser.role : 'instructor'
   };
-
   try {
     const res = await fetch('/api/courses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to create course.');
-
-    showAlert(`Success: "${data.course.title}" has been published to catalog!`, 'success');
+    if (!res.ok) throw new Error(data.error || 'Failed to create course');
+    showAlert('Course published successfully!', 'success');
     createCourseForm.reset();
     await loadCourses();
-  } catch (err) {
-    showAlert(err.message, 'error');
-  }
+  } catch (err) { showAlert(err.message, 'error'); }
 });
 
-testUnauthorizedBtn.addEventListener('click', async () => {
-  try {
-    const res = await fetch('/api/courses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: 'Unauthorized Test Course',
-        description: 'Testing role protection',
-        lessons_text: 'Should be blocked',
-        role: 'student'
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      showAlert(`⚠️ 403 Forbidden: ${data.error}`, 'error');
-    }
-  } catch (err) {
-    showAlert('Request blocked by security policy.', 'error');
-  }
-});
-
-// ==========================================
-// COURSE CATALOG & DETAILS
-// ==========================================
+if (testUnauthorizedBtn) {
+  testUnauthorizedBtn.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Test', description: 'Test', lessons_text: 'Test', role: 'student' })
+      });
+      const data = await res.json();
+      if (!res.ok) showAlert(`⚠️ 403 Forbidden: ${data.error}`, 'error');
+    } catch (err) { showAlert('Blocked by security policy.', 'error'); }
+  });
+}
 
 async function loadCourses() {
   try {
     const res = await fetch('/api/courses');
-    if (!res.ok) throw new Error('Failed to load courses.');
     courses = await res.json();
     renderCourses();
     populateCourseSelect();
-  } catch (err) {
-    courseListEl.innerHTML = `<p style="color: var(--danger);">Could not connect to database.</p>`;
-  }
+  } catch (err) { courseListEl.innerHTML = '<p style="color: var(--danger);">Failed to load courses.</p>'; }
 }
 
 function renderCourses() {
   if (totalCoursesEl) totalCoursesEl.textContent = courses.length;
-
-  if (courses.length === 0) {
-    courseListEl.innerHTML = '<p style="color: var(--text-muted);">No courses found in database.</p>';
-    return;
-  }
-
   courseListEl.innerHTML = courses.map(c => `
     <article class="course-card">
       <div class="course-card-top">
@@ -491,10 +417,7 @@ function renderCourses() {
       <h4 class="course-title">${escapeHtml(c.title)}</h4>
       <p class="course-desc">${escapeHtml(c.description)}</p>
       <div class="course-meta">
-        <div class="meta-item">
-          <span>Instructor:</span>
-          <span class="instructor-name">${escapeHtml(c.instructor_name || 'Instructor')}</span>
-        </div>
+        <div class="meta-item"><span>Instructor:</span> <span class="instructor-name">${escapeHtml(c.instructor_name || 'Instructor')}</span></div>
       </div>
       <div class="card-btn-row">
         <button class="btn btn-outline" type="button" onclick="showCourseDetails(${c.id})">Read Lessons</button>
@@ -504,8 +427,8 @@ function renderCourses() {
   `).join('');
 }
 
-window.showCourseDetails = function (id) {
-  const c = courses.find(item => item.id === id);
+window.showCourseDetails = function(id) {
+  const c = courses.find(i => i.id === id);
   if (!c) return;
   modalTitle.textContent = c.title;
   modalCategory.textContent = c.category;
@@ -514,13 +437,8 @@ window.showCourseDetails = function (id) {
   detailModal.style.display = 'flex';
 };
 
-function closeDetailModal() { detailModal.style.display = 'none'; }
-modalCloseBtn.addEventListener('click', closeDetailModal);
-modalBottomClose.addEventListener('click', closeDetailModal);
-detailModal.addEventListener('click', (e) => {
-  if (e.target === detailModal) closeDetailModal();
-});
+modalCloseBtn.addEventListener('click', () => { detailModal.style.display = 'none'; });
+modalBottomClose.addEventListener('click', () => { detailModal.style.display = 'none'; });
 
-// Initialize on Load
 updateUIForUser();
 loadCourses();

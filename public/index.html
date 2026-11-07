@@ -19,7 +19,6 @@
         </div>
       </a>
       
-      <!-- User Auth State -->
       <div class="nav-actions">
         <div id="auth-logged-out" class="auth-group">
           <button class="btn btn-primary" id="open-auth-btn" type="button">Sign In / Register</button>
@@ -37,7 +36,6 @@
     </div>
   </header>
 
-  <!-- Global Alert / Feedback Banner -->
   <div class="container" style="margin-top: 16px;">
     <div id="feedback-alert" class="alert" role="alert" style="display: none;"></div>
   </div>
@@ -46,7 +44,7 @@
   <section class="hero">
     <div class="container">
       <div class="hero-card">
-        <span class="hero-tag">Week 02 Full-Stack • Day 3</span>
+        <span class="hero-tag">Week 02 Full-Stack • Final Delivery</span>
         <h2>Interactive Learning & <span class="hero-gradient-text">Automated Quiz Assessment</span></h2>
         <p>Instructors publish lessons and author multiple-choice quizzes; students test their mastery with verified submissions.</p>
         
@@ -61,7 +59,7 @@
           </div>
           <div class="stat-item">
             <span class="stat-num">SQLite</span>
-            <span class="stat-label">Relational Tests</span>
+            <span class="stat-label">Persistent DB</span>
           </div>
         </div>
       </div>
@@ -71,7 +69,7 @@
   <!-- Main Content Layout -->
   <main class="container">
 
-    <!-- 1. Instructor Studio Panel (Shown for Instructors) -->
+    <!-- Instructor Studio Panel -->
     <section class="card instructor-panel" id="instructor-panel" style="display: none;">
       <div class="panel-header">
         <div>
@@ -84,7 +82,6 @@
         </div>
       </div>
 
-      <!-- Form A: Create Course -->
       <form id="create-course-form">
         <div class="form-row">
           <div class="form-group flex-2">
@@ -112,7 +109,6 @@
         </div>
       </form>
 
-      <!-- Form B: Add Question to Course (Day 3 Feature) -->
       <form id="add-question-form" style="display: none;">
         <div class="form-group">
           <label for="target-course-select">Select Course to Add Question <span class="required">*</span></label>
@@ -163,20 +159,31 @@
       </form>
     </section>
 
-    <!-- 2. Student Security Banner (Shown for Students) -->
+    <!-- Student Dashboard Panel (With History Button) -->
     <section class="card student-panel" id="student-panel" style="display: none;">
       <div class="student-info-box">
         <div>
           <h4>Student Dashboard Active</h4>
-          <p>Browse courses below, read lesson notes, and attempt quizzes to test your understanding.</p>
+          <p>Browse courses below, read lesson notes, attempt quizzes, and review your historical test scores.</p>
         </div>
-        <button class="btn btn-danger-outline" id="test-unauthorized-btn" type="button">
-          Test Instructor Action (Demonstrate 403 Block)
-        </button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-sm" id="view-history-btn" type="button" style="border: 1px solid #065f46; color: #065f46; font-weight: 700;">
+            📊 View My Quiz History
+          </button>
+          <button class="btn btn-danger-outline btn-sm" id="test-unauthorized-btn" type="button">
+            Test 403 Security
+          </button>
+        </div>
+      </div>
+
+      <!-- Student Attempts History Table -->
+      <div id="attempts-history-section" style="margin-top: 20px; display: none; border-top: 1px solid var(--border); padding-top: 16px;">
+        <h5 style="font-size: 15px; font-weight: 700; color: var(--secondary); margin-bottom: 12px;">Saved Quiz Attempts (Persistent in SQLite)</h5>
+        <div id="attempts-table-container"></div>
       </div>
     </section>
 
-    <!-- 3. Course Catalog Grid -->
+    <!-- Course Catalog Grid -->
     <section class="section-layout">
       <div class="section-header">
         <div>
@@ -192,7 +199,7 @@
 
   </main>
 
-  <!-- Interactive Quiz Modal (Day 3 Feature) -->
+  <!-- Interactive Quiz Modal -->
   <div class="modal-overlay" id="quiz-modal" role="dialog" aria-modal="true" style="display: none;">
     <div class="modal-card quiz-modal-card">
       <button class="modal-close-btn" id="close-quiz-btn" type="button">&times;</button>
@@ -203,13 +210,9 @@
         <p id="quiz-status-text" style="color: var(--text-muted); font-size: 13.5px;">Answer all questions below and submit for instant evaluation.</p>
       </div>
 
-      <!-- Quiz Questions Container -->
       <form id="quiz-form">
         <div id="quiz-questions-container" class="quiz-questions-list"></div>
-
-        <!-- Quiz Result Banner (Shown after submission) -->
         <div id="quiz-result-box" class="quiz-result-box" style="display: none;"></div>
-
         <div class="quiz-footer-actions">
           <button type="button" class="btn btn-outline" id="cancel-quiz-btn">Close</button>
           <button type="submit" class="btn btn-primary" id="submit-quiz-btn">Submit Quiz Answers</button>
@@ -284,7 +287,7 @@
       <h4 style="margin-top: 20px; font-size: 15px; color: var(--secondary);">Lesson Notes</h4>
       <div class="lesson-box" id="modal-lesson">Lesson text will appear here.</div>
 
-      <div style="margin-top: 22px; display: flex; justify-content: flex-end; gap: 10px;">
+      <div style="margin-top: 22px; display: flex; justify-content: flex-end;">
         <button class="btn btn-outline" id="modal-bottom-close" type="button">Close</button>
       </div>
     </div>
@@ -292,7 +295,7 @@
 
   <footer>
     <div class="container">
-      <p>LearnTrack • Stack & Scale Remote Internship 2026 • Week 02 Milestone 3</p>
+      <p>LearnTrack • Stack & Scale Remote Internship 2026 • Week 02 Final Delivery</p>
     </div>
   </footer>
 
